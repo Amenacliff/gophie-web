@@ -1,9 +1,10 @@
 import React, { Component } from "react";
 import Modal from "react-bootstrap/Modal";
 import Rating from "material-ui-rating";
-import ReactPlayer from 'react-player';
+import ReactPlayer from "react-player";
 import axios from "axios";
-import "../css/DescriptionPopup.css";
+import { greekFromEnglish } from "../utils";
+import "../css/Popup.css";
 
 class Popup extends Component {
   constructor(props) {
@@ -26,17 +27,19 @@ class Popup extends Component {
     axios
       .post(this.state.ratings_api + "/movie/ratings/average/", {
         name: movie.Title,
-        engine: movie.Source
+        engine: movie.Source,
       })
-      .then(res => {
+      .then((res) => {
         this.setState({
-          ratings: res.data
+          ratings: res.data,
         });
       })
-      .catch(err => {
-        this.setState({
-          error: true
-        });
+      .catch((err) => {
+        if (err) {
+          this.setState({
+            error: true,
+          });
+        }
       });
   };
 
@@ -46,52 +49,60 @@ class Popup extends Component {
       .post(this.state.ratings_api + "/movie/rating/", {
         movie_name: movie.Title,
         engine: movie.Source,
-        ip_address: this.props.ip_address
+        ip_address: this.props.ip_address,
       })
-      .then(res => {
+      .then((res) => {
         if (res.data !== null) {
           this.setState({
-            ip_rating: res.data.score
+            ip_rating: res.data.score,
           });
         }
       })
-      .catch(err => {
-        this.setState({
-          error: true
-        });
+      .catch((err) => {
+        if (err) {
+          this.setState({
+            error: true,
+          });
+        }
       });
   };
 
-  rateMovie = value => {
+  rateMovie = (value) => {
     const { movie } = this.props;
     axios
       .post(this.state.ratings_api + "/rate/", {
         movie_name: movie.Title,
         engine: movie.Source,
         ip_address: this.props.ip_address,
-        score: value
+        score: value,
       })
-      .then(res => {
+      .then((res) => {
         if (res.data !== null) {
           this.setState({
-            ip_rating: res.data.score
+            ip_rating: res.data.score,
           });
         }
         // retrieve average to force rerender
         this.getAverage();
       })
-      .catch(err => {
-        this.setState({
-          error: true
-        });
+      .catch((err) => {
+        if (err) {
+          this.setState({
+            error: true,
+          });
+        }
       });
   };
 
   handlePlayRequest(e) {
     e.preventDefault();
-    this.setState({ play: true })
+    this.setState({ play: true });
+  }
 
-}
+  handleStopRequest(e) {
+    e.preventDefault()
+    this.setState({ play: false });
+  }
 
   render() {
     return (
@@ -114,9 +125,27 @@ class Popup extends Component {
               }
               alt={this.props.movie.Title}
             />
-            <a id="play-video" className="video-play-button" href="/" onClick={this.handlePlayRequest.bind(this)}>
+
+            {/* Video Stream Play Icon */}
+            {
+            this.state.play?
+            <a
+            id="stop-video"
+            className="video-stop-button"
+            href="/"
+            onClick={this.handleStopRequest.bind(this)}>
+              <span></span>{" "}  
+            </a>:
+            <a
+              id="play-video"
+              className="video-play-button"
+              href="/"
+              onClick={this.handlePlayRequest.bind(this)}
+            >
               <span> </span>{" "}
             </a>
+  }
+            {/* Video Stream Play Icon */}
           </section>
 
           <section className="gophie-modal__body">
@@ -127,16 +156,27 @@ class Popup extends Component {
             </Modal.Header>
             {
         this.state.play?
-        <div className="player-wrapper">
-          <ReactPlayer url={this.props.movie.DownloadLink}
-           playing
-           controls
-           width="100%"
-           height="100%" />
-        </div>:
+        <div>
+          <div className="player-wrapper">
+            <ReactPlayer url={this.props.movie.DownloadLink}
+            className="react-player"
+            playing
+            pip
+            controls
+            width="100%"
+            height="90%" />
+          </div>
+          <div className="player-error-alert">
+            {greekFromEnglish(this.props.server) === "Alpha"?
+              <p className="player-error-message">Streaming from alpha is problematic, suggest <a className="gophie-link" href={this.props.movie.DownloadLink} target="_blank" rel="noopener noreferrer">downloading</a>  instead</p>: <p></p>            }
+          </div>
+         </div>
+         :
          <section className="gophie-modal__body--body">
          <div className="gophie-modal-rating-container">
-           <div className="gophie-modal-rating-container__average">
+           <div 
+           className="gophie-modal-rating-container__average"
+           data-tour="my-seventh-step">
              <Rating
                value={Math.round(
                  this.state.ratings.average_ratings
@@ -169,7 +209,9 @@ class Popup extends Component {
              </div>
            </div>
 
-           <div className="gophie-modal-rating-container__rate">
+           <div 
+           className="gophie-modal-rating-container__rate"
+           data-tour="my-sixth-step">
              <p>Rate Movie</p>
              <Rating
                value={this.state.ip_rating}
@@ -185,7 +227,7 @@ class Popup extends Component {
              : this.props.movie.Description}
          </div>
        </section>
-      }      
+      }
           </section>
         </Modal.Body>
       </Modal>
